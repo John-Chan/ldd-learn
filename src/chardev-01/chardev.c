@@ -21,20 +21,22 @@ MODULE_LICENSE("GPL");
 /*
 * this function is called when the module is loaded
 */
-int     init_moudle(void)
+int     init_module(void)
 {
-    printk(KERN_ALERT "init_moudle\n");
+    printk(KERN_ALERT DEBUG_TAG "init_moudle\n");
     
     // aquire new major number,reutrn >0 if success
     major= register_chrdev(0,DEVICE_NAME,&fops);
     if(major < 0){
-        printk(KERN_ALERT "register_chrdev fail:%d\n",major);
+        printk(KERN_ALERT  DEBUG_TAG "register_chrdev fail:%d\n",major);
         return major;
     }
-    printk(KERN_ALERT "Assigned major numner %d \n",major);
-    printk(KERN_ALERT "to talk to the driver,create a device file with:\n");
-    printk(KERN_ALERT "'mknod /dev/%s c %d 0'\n",DEVICE_NAME,major);
-    printk(KERN_ALERT "and try cat echo to the device file\n" );
+    printk(KERN_ALERT  DEBUG_TAG "Assigned major numner %d \n",major);
+    printk(KERN_ALERT  DEBUG_TAG "to talk to the driver,create a device file with:\n");
+    printk(KERN_ALERT  DEBUG_TAG "mknod /dev/%s c %d 0\n",DEVICE_NAME,major);
+    printk(KERN_ALERT  DEBUG_TAG "and try cat echo to the device file\n" );
+    printk(KERN_ALERT  DEBUG_TAG "to remove:\n");
+    printk(KERN_ALERT  DEBUG_TAG "rm -f /dev/%s\n",DEVICE_NAME);
     //printk_flush();
     
     return NO_ERROR;
@@ -47,7 +49,7 @@ int     init_moudle(void)
 */
 void    cleanup_module(void)
 {
-    printk(KERN_INFO "cleanup_module\n");
+    printk(KERN_INFO  DEBUG_TAG "cleanup_module\n");
     // after 2.6.12-rc2,unregister_chrdev return void
     /*
     int ret= unregister_chrdev(major,DEVICE_NAME);

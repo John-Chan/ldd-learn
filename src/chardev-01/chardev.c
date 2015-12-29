@@ -1,10 +1,8 @@
 #include "chardev.h"
 #include "file_op.h"
+#include "shared.h"
 
-static int major;
-static int has_open=0;
-static char msg_buff[BUFFER_SIZE];
-static char* msg_ptr;
+
 
 static struct file_operations fops={
     .read       =   device_read,
@@ -15,7 +13,7 @@ static struct file_operations fops={
 
 
 MODULE_DESCRIPTION("A simple PCI driver");
-MODULE_AUTHOR("trem (tremyfr@yahoo.fr)");
+MODULE_AUTHOR("john (cpp.cheen@gmail.com)");
 MODULE_LICENSE("GPL");
 
 /*
@@ -24,13 +22,20 @@ MODULE_LICENSE("GPL");
 int     init_moudle(void)
 {
     printk(KERN_INFO "init_moudle");
-    return NO_ERROR;
     
-    (void)fops;
-    (void)major;
-    (void)has_open;
-    (void)msg_buff;
-    (void)msg_ptr;
+    // aquire new major number,reutrn >0 if success
+    major= register_chrdev(0,DEVICE_NAME,&fops);
+    if(major < 0){
+        printk(KERN_ALERT "register_chrdev fail:%d",major);
+        return major;
+    }
+    printk(KERN_INFO "Assigned major numner %d \n",major);
+    printk(KERN_INFO "to talk to the driver,create a device file with:\n",major);
+    printk(KERN_INFO "'mknod /dev/%s c %d 0'\n",DEVICE_NAME,major);
+    printk(KERN_INFO "and try cat echo to the device file\n",DEVICE_NAME,major);
+    
+    return NO_ERROR;
+ 
 }
 
 /*
@@ -40,16 +45,37 @@ int     init_moudle(void)
 void    cleanup_module(void)
 {
     printk(KERN_INFO "cleanup_module");
+    int ret= unregister_chrdev(major,DEVICE_NAME);
+    if(ret < 0){
+        printk(KERN_ALERT "unregister_chrdev fail:%d",ret);
+    }
 }
 
-
+/*
+* called when a process try to open the device file like 'cat /dev/myfile'
+*/
 int  device_open(struct inode * nod,struct file * fp)
 {
-    //
-    return -1;
+    static int counter=0;
+    if(has_open != 0){
+        return -EBUSY;
+    }
+    ++has_open;
+    sprintf(msg_buff,"device already opened %d times",has_open);
+    msg_ptr=msg_buff;
+    // increment module ref-counter
+    try_module_get(THIS_MODULE);
+    return NO_ERROR;
 }
+
+/*
+* called when a process close the device file 
+*/
 int  device_release(struct inode* nod, struct file * fp)
 {
-    //
-    return -1;
+    --has_open;
+    // decrement the ref-counter,or else once you opened the file, you 
+    // will never get rid of the module
+    module_put(THIS_MODULE);
+    return NO_ERROR;
 }

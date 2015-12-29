@@ -23,7 +23,7 @@ MODULE_LICENSE("GPL");
 */
 int     init_moudle(void)
 {
-    printk(KERN_INFO "init_moudle\n");
+    printk(KERN_ALERT "init_moudle\n");
     
     // aquire new major number,reutrn >0 if success
     major= register_chrdev(0,DEVICE_NAME,&fops);

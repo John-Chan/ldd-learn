@@ -12,7 +12,9 @@
 *.i
 *.lst
 *.symtypes
+*.symvers
 *.order
+*.ko.cmd
 *.elf
 *.bin
 *.gz
@@ -23,4 +25,6 @@
 
 *.orig
 *~
+.tmp_versions/
+.directory
 \#*#

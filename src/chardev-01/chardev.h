@@ -18,7 +18,7 @@
 int     init_moudle(void);
 void    cleanup_module(void);
 static int  device_open(struct inode *,struct file *);
-static int  device_release(struct inode* struct file *);
+static int  device_release(struct inode*, struct file *);
 
 #endif//!LDD_CHAR_DEVICE_1_H
 

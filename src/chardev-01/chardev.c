@@ -25,6 +25,12 @@ int     init_moudle(void)
 {
     printk(KERN_INFO "init_moudle");
     return NO_ERROR;
+    
+    (void)fops;
+    (void)major;
+    (void)has_open;
+    (void)msg_buff;
+    (void)msg_ptr;
 }
 
 /*
@@ -34,4 +40,16 @@ int     init_moudle(void)
 void    cleanup_module(void)
 {
     printk(KERN_INFO "cleanup_module");
+}
+
+
+int  device_open(struct inode * nod,struct file * fp)
+{
+    //
+    return -1;
+}
+int  device_release(struct inode* nod, struct file * fp)
+{
+    //
+    return -1;
 }

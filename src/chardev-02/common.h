@@ -16,6 +16,7 @@
 #define     BUFFER_SIZE     32
 #define     NO_ERROR        0
 
+#define PROC_FS_ENTRY_NAME  "chr-test-dev"
  
 
 #endif//!LDD_DEV_COMMON_H

@@ -14,7 +14,7 @@ static  int     poc_fop_show(struct seq_file *seqf,void* p)
             );
     return 0;
 }
-static  int     poc_fop_open(struct inode* node,struct file* fliep)
+static  int     poc_fop_open(struct inode* node,struct file* filep)
 {
     return single_open(filep,poc_fop_show,NULL);
 }

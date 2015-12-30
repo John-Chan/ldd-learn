@@ -1,4 +1,3 @@
-#include "chardev.h"
 #include "file_op.h"
 #include "shared.h"
 #include "proc_entry.h"
@@ -7,7 +6,44 @@
 #include <linux/module.h>
 #include <linux/fs.h>
 
-#define PROC_FS_ENTRY_NAME  "chr-test-dev"
+
+
+
+MODULE_DESCRIPTION("A simple  driver");
+MODULE_AUTHOR("john (cpp.cheen@gmail.com)");
+MODULE_LICENSE("GPL");
+
+
+
+/*
+* called when a process try to open the device file like 'cat /dev/myfile'
+*/
+static int  device_open(struct inode * nod,struct file * fp)
+{
+    static int counter=0;
+    if(has_open != 0){
+        return -EBUSY;
+    }
+    ++has_open;
+    sprintf(msg_buff,"device already opened %d times\n",++counter);
+    msg_ptr=msg_buff;
+    // increment module ref-counter
+    try_module_get(THIS_MODULE);
+    return NO_ERROR;
+}
+
+/*
+* called when a process close the device file 
+*/
+static int  device_release(struct inode* nod, struct file * fp)
+{
+    --has_open;
+    // decrement the ref-counter,or else once you opened the file, you 
+    // will never get rid of the module
+    module_put(THIS_MODULE);
+    return NO_ERROR;
+}
+
 
 static struct file_operations fops={
     .read       =   device_read,
@@ -16,18 +52,13 @@ static struct file_operations fops={
     .release    =   device_release
 };
 
-
-MODULE_DESCRIPTION("A simple PCI driver");
-MODULE_AUTHOR("john (cpp.cheen@gmail.com)");
-MODULE_LICENSE("GPL");
-
 /*
 * this function is called when the module is loaded
 */
 static int     __init   module_load(void)
 {
     printk(KERN_ALERT DEBUG_TAG "init_moudle\n");
-    int ret=0;
+    int ret;
     // aquire new major number,reutrn >0 if success
     major= register_chrdev(0,DEVICE_NAME,&fops);
     if(major < 0){
@@ -40,7 +71,7 @@ static int     __init   module_load(void)
         return ret;
     }
     
-    PROC_FS_ENTRY_NAME
+    
     printk(KERN_ALERT  DEBUG_TAG "Assigned major numner %d \n",major);
     printk(KERN_ALERT  DEBUG_TAG "to talk to the driver,create a device file with:\n");
     printk(KERN_ALERT  DEBUG_TAG "mknod /dev/%s c %d 0\n",DEVICE_NAME,major);
@@ -70,34 +101,6 @@ static void    __exit   module_unload(void)
     */
 }
 
-/*
-* called when a process try to open the device file like 'cat /dev/myfile'
-*/
-int  device_open(struct inode * nod,struct file * fp)
-{
-    static int counter=0;
-    if(has_open != 0){
-        return -EBUSY;
-    }
-    ++has_open;
-    sprintf(msg_buff,"device already opened %d times\n",++counter);
-    msg_ptr=msg_buff;
-    // increment module ref-counter
-    try_module_get(THIS_MODULE);
-    return NO_ERROR;
-}
-
-/*
-* called when a process close the device file 
-*/
-int  device_release(struct inode* nod, struct file * fp)
-{
-    --has_open;
-    // decrement the ref-counter,or else once you opened the file, you 
-    // will never get rid of the module
-    module_put(THIS_MODULE);
-    return NO_ERROR;
-}
 
 module_init(module_load); 
 module_exit(module_unload); 

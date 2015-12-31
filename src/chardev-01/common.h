@@ -11,7 +11,7 @@
  *
  */
 #define     MAX_DEVICE      32
-#define     DEVICE_NAME     "chr-test-dev"      /* will show in '/proc/devices' */
+#define     DEVICE_NAME     "chr-test-dev-1"      /* will show in '/proc/devices' */
 #define		DEBUG_TAG	" LDD-DEBUG "
 #define     BUFFER_SIZE     32
 #define     NO_ERROR        0

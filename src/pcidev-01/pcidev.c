@@ -49,6 +49,18 @@ MODULE_DEVICE_TABLE(pci, pci_ids);
 static dev_t devno;
 static int major;
 
+
+static  unsigned long g_falgs;
+static  unsigned long g_base_port;
+static  unsigned long g_base_port_size;
+static  unsigned long g_phys_addr;
+static  unsigned long g_mem_size;
+
+static  unsigned long g_w_port;
+static  unsigned long g_r_port;
+static  unsigned long g_c_port;
+static  unsigned long g_s_port;
+
 /**
  *  This structure is used to link a pci_dev to a cdev 
  *
@@ -246,6 +258,9 @@ static struct file_operations pci_ops = {
  *         1 => this driver handle this device
  *
  */
+ 
+ #if    0
+ 
 static int pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 {
 	int ret, minor;
@@ -289,7 +304,7 @@ static int pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 
 	/* 'alloc' IO to talk with the card */
 	if (pci_request_region(dev, SSA10A_BAR_IO, "IO-pci") == 0) {
-		dev_err(&(dev->dev), "Can't request BAR2\n");
+		dev_err(&(dev->dev), "Can't request SSA10A_BAR_IO\n");
 		cdev_del(cdev);
 		goto error;
 	}
@@ -316,6 +331,119 @@ static int pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
 	return 1;
 
 error:
+	return 0;
+}
+#endif
+static int pci_probe(struct pci_dev *dev, const struct pci_device_id *id)
+{
+    dev_info(&(dev->dev), "pci_probe <== \n");
+	int ret, minor;
+	struct cdev *cdev;
+	dev_t devno;
+
+	/* add this pci device in pci_cdev */
+	if ((minor = pci_cdev_add(pci_cdev, MAX_DEVICE, dev)) < 0)
+		goto error;
+
+	/* compute major/minor number */
+	devno = MKDEV(major, minor);
+
+	/* allocate struct cdev */
+	cdev = cdev_alloc();
+
+	/* initialise struct cdev */
+	cdev_init(cdev, &pci_ops);
+	cdev->owner = THIS_MODULE;
+
+	/* register cdev */
+	ret = cdev_add(cdev, devno, 1);
+	if (ret < 0) {
+		dev_err(&(dev->dev), "Can't register character device\n");
+		goto error;
+	}
+	pci_cdev[minor].cdev = cdev;
+
+	dev_info(&(dev->dev), "%s The major device number is %d (%d).\n",
+	       "Registeration is a success", MAJOR(devno), MINOR(devno));
+	dev_info(&(dev->dev), "If you want to talk to the device driver,\n");
+	dev_info(&(dev->dev), "you'll have to create a device file. \n");
+	dev_info(&(dev->dev), "We suggest you use:\n");
+	dev_info(&(dev->dev), "mknod %s c %d %d\n", PCI_DEVICE_NAME, MAJOR(devno), MINOR(devno));
+	dev_info(&(dev->dev), "The device file name is important, because\n");
+	dev_info(&(dev->dev), "the ioctl program assumes that's the\n");
+	dev_info(&(dev->dev), "file you'll use.\n");
+
+	/* enable the device */
+	pci_enable_device(dev);
+
+    /////////////////////////////////////////////////////
+
+
+    ret = pci_request_regions(dev,"IO-pci");
+    if ( ret )
+    {  
+        printk(KERN_ERR"call pci_request_regions() falied,error = %d\n",ret);
+		cdev_del(cdev);
+		goto error;
+    }
+    
+//static  unsigned long g_falgs;
+//static  unsigned long g_base_port;
+//static  unsigned long g_base_port_size;
+//static  unsigned long g_phys_addr;
+//static  unsigned long g_mem_size;
+    g_phys_addr = 0 ;
+    g_mem_size = 0; 
+    g_base_port_size=0;
+    g_base_port=0;
+    g_falgs=0;
+    
+    ret = 0 ;
+    
+    int bar;
+    //pci_sscrypt_dev = pci_sscrypt_dev_allocate(dev);
+    for ( bar = 0; bar < 6; bar ++ )
+    {
+        g_falgs = pci_resource_flags(dev,bar);
+        printk(KERN_ALERT DEBUG_TAG "looking up BAR %d,flags = %08X\n",bar,g_falgs);
+        if ( g_falgs&IORESOURCE_IO )
+        {
+            g_base_port =  pci_resource_start(dev,bar);
+            g_base_port_size = pci_resource_len(dev,bar);   
+            
+            g_w_port = g_base_port;
+            g_s_port = g_base_port  + 1;
+            g_c_port = g_base_port  + 2;
+            g_r_port = g_base_port  + 3;  
+
+            //pci_sscrypt_dev->wport = g_base_port;
+            //pci_sscrypt_dev->sport = g_base_port  + 1;
+            //pci_sscrypt_dev->cport = g_base_port  + 2;
+            //pci_sscrypt_dev->rport = g_base_port  + 3;    
+
+            printk(KERN_ALERT DEBUG_TAG "found IORESOURCE_IO ,base_port=%08X,base_port_size=%08X\n",g_base_port,g_base_port_size);
+            printk(KERN_ALERT DEBUG_TAG "write data complete signal port %08X\n",g_w_port);
+            printk(KERN_ALERT DEBUG_TAG "process complete signal port %08X\n",g_s_port);
+            printk(KERN_ALERT DEBUG_TAG "clear interrupt signal port %08X\n",g_c_port);
+            printk(KERN_ALERT DEBUG_TAG "reset device port %08X\n",g_r_port);
+
+        }
+        else if ( g_falgs&IORESOURCE_MEM )
+        {
+            printk(KERN_ALERT DEBUG_TAG "found IORESOURCE_MEM \n");
+            g_phys_addr = pci_resource_start(dev,bar);
+            g_mem_size  = pci_resource_len(dev,bar);
+            printk(KERN_ALERT DEBUG_TAG "g_phys_addr %08X\n",g_phys_addr);
+            printk(KERN_ALERT DEBUG_TAG "g_mem_size %08X\n",g_mem_size);
+        }
+    }
+
+
+    dev_info(&(dev->dev), "pci_probe ==> do handle \n");
+	return 1;
+
+error:
+    dev_info(&(dev->dev), "pci_probe ==> do not handle \n");
 	return 0;
 }
 
@@ -428,7 +556,7 @@ static void    __exit   module_unload(void)
     pci_unregister_driver(&pci_driver);
     /* unregister character device */
     for(i=0;i<MAX_DEVICE;++i){
-        if(pci_cdev[i].pci_cdev != NULL){
+        if(pci_cdev[i].pci_dev != NULL){
             cdev_del(pci_cdev[i].cdev);
         }
     }
@@ -443,3 +571,114 @@ static void    __exit   module_unload(void)
 
 module_init(module_load); 
 module_exit(module_unload); 
+
+
+#if 0
+
+
+static int pci_sscrypt_dev_probe(struct pci_dev *dev,const struct pci_device_id *id)
+{
+  int retval;
+  int devno;
+  int bar;
+  unsigned long falgs;
+  unsigned long base_port;
+  unsigned long base_port_size;
+  unsigned long phys_addr;
+  unsigned long mem_size;
+
+  struct pci_sscrypt_dev_t *pci_sscrypt_dev;
+
+#ifdef PCI_SSCRYPT_DEBUG
+  printk(KERN_DEBUG "entry pci_sscrypt_dev_probe()\n");
+#endif
+  retval =  pci_enable_device(dev);
+  if( retval)
+    {
+#ifdef PCI_SSCRYPT_DEBUG
+     printk(KERN_ERR"pci_enable_device falied %u\n",retval);
+#endif
+      return retval;
+    }
+
+  retval = pci_request_regions(dev,DEVICE_NAME);
+  if ( retval )
+  {
+#ifdef PCI_SSCRYPT_DEBUG
+    printk(KERN_ERR"call pci_request_regions() falied\n");
+#endif
+    return retval;
+  }
+  phys_addr = 0 ;
+  mem_size = 0; 
+  retval = 0 ;
+  pci_sscrypt_dev = pci_sscrypt_dev_allocate(dev);
+  for ( bar = 0; bar < 6; bar ++ )
+  {
+      falgs = pci_resource_flags(dev,bar);
+      if ( falgs&IORESOURCE_IO )
+      {
+        base_port =  pci_resource_start(dev,bar);
+        base_port_size = pci_resource_len(dev,bar);   
+        pci_sscrypt_dev->wport = base_port;
+        pci_sscrypt_dev->sport = base_port  + 1;
+        pci_sscrypt_dev->cport = base_port  + 2;
+        pci_sscrypt_dev->rport = base_port  + 3;    
+#ifdef PCI_SSCRYPT_DEBUG
+        printk(KERN_INFO"write data complete signal port %d\n",pci_sscrypt_dev->wport);
+        printk(KERN_INFO"process complete signal port %d\n",pci_sscrypt_dev->sport);
+        printk(KERN_INFO"clear interrupt signal port %d\n",pci_sscrypt_dev->cport);
+        printk(KERN_INFO"reset device port %d\n",pci_sscrypt_dev->rport);
+#endif
+      }
+      else if ( falgs&IORESOURCE_MEM )
+      {
+         phys_addr = pci_resource_start(dev,bar);
+         mem_size  = pci_resource_len(dev,bar);
+      }
+  }
+  
+  pci_sscrypt_dev->irq = dev->irq;
+  pci_sscrypt_dev->base_map_address =  ioremap(phys_addr,mem_size);
+  pci_sscrypt_dev->wmapaddr = pci_sscrypt_dev->base_map_address;
+  memset_io(pci_sscrypt_dev->base_map_address,0,mem_size);
+  pci_sscrypt_dev->smapaddr = pci_sscrypt_dev->wmapaddr+4096; 
+#ifdef PCI_SSCRYPT_DEBUG
+  printk(KERN_INFO"device irq %d\n", dev->irq);
+  printk(KERN_INFO"base_map_address %p\n",pci_sscrypt_dev->base_map_address);
+  printk(KERN_INFO"device memory size %lu\n",mem_size);
+#endif
+  tasklet_init(&pci_sscrypt_dev->tasklet,
+               pci_do_tasklet,
+               (unsigned long)pci_sscrypt_dev);
+  devno = MKDEV(pci_sscrypt_dev_major,pci_sscrypt_dev_curminor++);
+  pci_sscrypt_dev_init(pci_sscrypt_dev,devno);
+#if LINUX_VERSION_CODE==LINUX_2_1_16
+  class_device_create(pci_sscrypt_class, NULL, devno,NULL, "pci_sscrypt%d", pci_sscrypt_dev_curdevno++);
+#else
+  device_create(pci_sscrypt_class,NULL , devno,NULL, "pci_sscrypt%d", pci_sscrypt_dev_curdevno++);
+#endif
+
+  retval = request_irq(pci_sscrypt_dev->irq ,
+              pci_sscrypt_dev_interrupt,
+#if LINUX_VERSION_CODE==LINUX_2_1_16
+              SA_SHIRQ,
+#else
+              IRQF_SHARED,
+#endif
+              DEVICE_NAME,
+              pci_sscrypt_dev
+             );
+  if ( retval )
+  {
+#ifdef PCI_SSCRYPT_DEBUG
+    printk(KERN_ERR"request_irq() falied %u\n",retval);
+#endif
+  }
+#ifdef PCI_SSCRYPT_DEBUG
+  printk(KERN_DEBUG "level pci_sscrypt_dev_probe()\n");
+#endif
+  return retval;
+  
+}
+#endif

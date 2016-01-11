@@ -45,16 +45,15 @@ struct  ssxa_proto_buff_t{
 };
 #pragma pack()
 
-struct  device_memory_addr_t{
-    unsigned long addr;
-    unsigned long size;
-};
+
 struct  device_io_addr_t{
    
     unsigned long w_port;
     unsigned long r_port;
     unsigned long c_port;
     unsigned long s_port;
+    unsigned long mem_addr;
+    unsigned long mem_size;
 };
 struct  chip_worker_t{
     u8      id;
@@ -66,8 +65,7 @@ struct  driver_context_t{
     int     minor;
 	struct  pci_dev *pci_dev;
 	struct  cdev *cdev;
-    struct  device_memory_addr_t    mem_resource;
-    struct  device_io_addr_t        io_resource;
+    struct  device_io_addr_t        dev_resource;
     struct  chip_worker_t           workers[MAX_CHIP_IN_DEVICE];
 };
 

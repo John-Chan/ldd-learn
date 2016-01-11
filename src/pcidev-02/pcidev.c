@@ -16,26 +16,19 @@
 #include <asm-generic/bug.h>
 
  
-#define BAR_IO			SSA10A_BAR_IO
-#define BAR_MEM			SSA10A_BAR_MEM
+
 
 MODULE_DESCRIPTION("SSX10A PCI  driver");
 MODULE_AUTHOR("john (cpp.cheen@gmail.com)");
 MODULE_LICENSE("GPL");
+
 
 /**********************************************************************************************************************
 
 helper functions:
 
 **********************************************************************************************************************/
-struct  driver_context_t{
-    int     minor;
-	struct  pci_dev *pci_dev;
-	struct  cdev *cdev;
-    struct  device_memory_addr_t    mem_resource;
-    struct  device_io_addr_t        io_resource;
-    struct  chip_worker_t           workers[MAX_CHIP_IN_DEVICE];
-};
+
 
 static void    init_driver_contexts(
     int first_minor,
@@ -48,7 +41,7 @@ static void    init_driver_contexts(
     for(int i=0;i<count;++i){
         drv_ctx_head[i].minor=first_minor++;
         for(int j=0;j<MAX_CHIP_IN_DEVICE;++j){
-            drv_ctx_head[i].workers[j].id = count&0xFFFF0000;
+            drv_ctx_head[i].workers[j].id = j;
         }
     }
 }
@@ -88,7 +81,8 @@ MODULE_DEVICE_TABLE(pci, pci_ids);
 
 static dev_t devno;
 static int major;
-static struct  driver_context_t driver_context[MAX_DEVICE];
+static struct  driver_context_t   driver_contexts[MAX_DEVICE];
+static struct  class*   dev_class;
 
 
 /**
@@ -114,6 +108,9 @@ static struct file_operations cdev_ops = {
  
 static int pci_driver_attach(struct pci_dev *dev, const struct pci_device_id *id)
 {
+    return 0;
+    
+    
     dev_info(&(dev->dev), "pci_probe <== \n");
 	int ret, minor;
 	struct cdev *cdev;
@@ -279,7 +276,7 @@ static int     __init   module_load(void)
     int ret;
     // allocate (several) major number ,start from 0
     // name will display in /proc/devices
-    ret= alloc_chrdev_region(&devno,0,MAX_DEVICE,CHR_DEVICE_NAME);
+    ret= alloc_chrdev_region(&devno,0,MAX_DEVICE,CHR_DEVICE_NAME);//$cat /proc/devices
     if (ret < 0) {
 		printk(KERN_ERR DEBUG_TAG "Can't get major\n");
 		return ret;
@@ -288,46 +285,27 @@ static int     __init   module_load(void)
 	/* get major number and save it in major */
 	major = MAJOR(devno);
     
-    init_driver_context(&driver_context,NULL,NULL,);
-	/* initialise pci_cdev */
-	pci_cdev_init(pci_cdev, MAX_DEVICE, MINOR(devno));
+    init_driver_context(MINOR(devno),MAX_DEVICE,&driver_contexts);
     
+    dev_class = class_create(THIS_MODULE,PCI_DEVICE_NAME); //$ls /sys/class
+    if(dev_class == NULL ){
+		printk(KERN_ERR DEBUG_TAG "class_create failed\n");
+        unregister_chrdev_region(devno, MAX_DEVICE);
+        return -1;
+    }
     /* register pci driver */
 	ret = pci_register_driver(&pci_driver);
 	if (ret < 0) {
-		/* free major/minor number */
-		unregister_chrdev_region(devno, 1);
-
 		printk(KERN_ERR DEBUG_TAG "pci-driver: can't register pci driver\n");
+        class_destroy(dev_class);
+        unregister_chrdev_region(devno, MAX_DEVICE);
+
 		return ret;
 	}
-    return NO_ERROR;
-    ////////////////////////////////////////////////////////////////
-    
-    /*
-    major= register_chrdev(0,CHR_DEVICE_NAME,&fops);
-    if(major < 0){
-        printk(KERN_ALERT  DEBUG_TAG "register_chrdev fail:%d\n",major);
-        return major;
-    }
-    ret=poc_entry_open(PROC_FS_ENTRY_NAME);
-    if(0!=ret){      
-        printk(KERN_ALERT  DEBUG_TAG "poc_entry_open fail:%d\n",ret);
-        return ret;
-    }
-    
-    
-    printk(KERN_ALERT  DEBUG_TAG "Assigned major numner %d \n",major);
-    printk(KERN_ALERT  DEBUG_TAG "to talk to the driver,create a device file with:\n");
-    printk(KERN_ALERT  DEBUG_TAG "mknod /dev/%s c %d 0\n",DEVICE_NAME,major);
-    printk(KERN_ALERT  DEBUG_TAG "and try cat echo to the device file\n" );
-    printk(KERN_ALERT  DEBUG_TAG "to remove:\n");
-    printk(KERN_ALERT  DEBUG_TAG "rm -f /dev/%s\n",DEVICE_NAME);
-    //printk_flush();
     
     return NO_ERROR;
-    */
- 
+   
+    
 }
 
 /*
@@ -336,10 +314,11 @@ static int     __init   module_load(void)
 */
 static void    __exit   module_unload(void)
 {
+    /*
     int i;
-    /* unregister pci driver */
+    // unregister pci driver  
     pci_unregister_driver(&pci_driver);
-    /* unregister character device */
+    // unregister character device 
     for(i=0;i<MAX_DEVICE;++i){
         if(pci_cdev[i].pci_dev != NULL){
             cdev_del(pci_cdev[i].cdev);
@@ -347,8 +326,19 @@ static void    __exit   module_unload(void)
     }
     
     
-	/* free major/minor number */
+	// free major/minor number 
 	unregister_chrdev_region(devno, MAX_DEVICE);
+    */
+    
+
+    printk(KERN_ALERT  DEBUG_TAG "module_unload -> class_destroy\n");
+    class_destroy(dev_class);
+    
+    printk(KERN_ALERT  DEBUG_TAG "module_unload -> unregister_chrdev_region\n");
+    unregister_chrdev_region(devno, MAX_DEVICE);
+    
+    printk(KERN_ALERT  DEBUG_TAG "module_unload -> pci_unregister_driver\n");
+    pci_unregister_driver(&pci_driver);
     
     printk(KERN_ALERT  DEBUG_TAG "module_unload\n");
 }

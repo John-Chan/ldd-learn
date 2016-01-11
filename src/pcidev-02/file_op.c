@@ -3,6 +3,7 @@
 #include "common.h"
 #include "utils.h"
 #include <linux/uaccess.h>
+#include <asm-generic/bug.h>
 
 
 /**
@@ -12,7 +13,7 @@
 int fop_open(struct inode *inode, struct file *file)
 {
 	int minor = iminor(inode);
-	file->private_data = (void *)pci_cdev_search_pci_dev(pci_cdev, MAX_DEVICE, minor);
+	//file->private_data = (void *)pci_cdev_search_pci_dev(pci_cdev, MAX_DEVICE, minor);
 	return 0;
 }
 

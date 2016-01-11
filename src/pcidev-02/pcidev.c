@@ -48,9 +48,10 @@ static void    init_driver_contexts(
     }
 }
 
-static void delete_driver_context(struct driver_context_t* drv_ctx)
+static void clear_driver_context(struct driver_context_t* drv_ctx_head,int count)
 {
     //
+    BUG_ON(count > MAX_DEVICE); 
 }
 /**********************************************************************************************************************
 

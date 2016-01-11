@@ -66,6 +66,7 @@ struct  chip_worker_t{
 };
 
 struct  driver_context_t{
+    int     alive;/* bool */
     int     minor;
 	struct  pci_dev *pci_dev;
 	struct  cdev cdev;

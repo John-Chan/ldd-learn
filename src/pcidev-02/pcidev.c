@@ -225,6 +225,7 @@ static int	mount_chr_dev(struct driver_context_t* driver_context,int dev_no)
     }
     
     device_create(dev_class,NULL,MKDEV(major,driver_context->minor),NULL,PCI_DEVICE_NAME);//$ls /dev/ 
+    printk(KERN_ERR DEBUG_TAG "device_create done,use [ls /dev | grep %s ] to check it out\n",PCI_DEVICE_NAME);
     return 0;
 fali_clean0: 
     return ret_code;   
@@ -380,6 +381,8 @@ static int     __init   module_load(void)
         unregister_chrdev_region(ssxa_devno, MAX_DEVICE);
         return -1;
     }
+    
+    printk(KERN_ERR DEBUG_TAG "class_create done,use [ls /sys/class | grep %s ] to check it out\n",PCI_DEVICE_NAME);
     /* register pci driver */
 	ret = pci_register_driver(&pci_driver);
 	if (ret < 0) {

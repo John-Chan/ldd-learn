@@ -6,6 +6,7 @@
 
 #include <linux/types.h>
 #include <linux/pci.h>
+#include <linux/cdev.h>		/* for cdev_ */
 #include <linux/fs.h>
 
 
@@ -45,7 +46,10 @@ struct  ssxa_proto_buff_t{
 };
 #pragma pack()
 
-
+struct driver_buffer_t{
+	char* addr;
+	unsigned long size;
+};
 struct  device_io_addr_t{
    
     unsigned long w_port;
@@ -64,9 +68,17 @@ struct  chip_worker_t{
 struct  driver_context_t{
     int     minor;
 	struct  pci_dev *pci_dev;
-	struct  cdev *cdev;
-    struct  device_io_addr_t        dev_resource;
+	struct  cdev cdev;
+    struct  device_io_addr_t        dev_resource; /* unmaped memory */
     struct  chip_worker_t           workers[MAX_CHIP_IN_DEVICE];
+    
+    /* base_addr io_port w_buffer r_buffer save address which was maped */
+    struct	driver_buffer_t			base_addr;
+    //struct	driver_buffer_t			io_port;
+    struct	driver_buffer_t			w_buffer;
+    struct	driver_buffer_t			s_buffer;
+    
+    u8								irq;
 };
 
 #endif//!SSXA_PCI_COMMON_H

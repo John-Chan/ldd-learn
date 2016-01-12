@@ -246,7 +246,8 @@ static  struct ssxa_protocol_t* put_crc(struct ssxa_protocol_t* msg)
     BUG_ON( msg->datalen > SSX10A_PROTO_DATA_LEN - 2 );
     crc=(unsigned short*)(&msg->data[msg->datalen]);
     *crc=ssxa_checksum(msg,6+msg->datalen);
-    *crc=cpu_to_le16(*crc);
+	// FIXME: byteorder ?
+    //*crc=cpu_to_le16(*crc);
     return msg;
 }
 static  struct ssxa_protocol_t* make_encrykey_msg(u32 chip_index,struct ssxa_protocol_t* msg)

@@ -335,7 +335,11 @@ static void	reset_io(struct driver_context_t* driver_context)
 
 static void	print_respons(const char* buff_256)
 {
+	char* data;
 	int data_len;
+	
+	data=(char*)buff_256;
+	
 	printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
 	if(data[1] > 0){
 		//

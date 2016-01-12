@@ -342,7 +342,15 @@ static void	print_respons(const char* buff_256)
 	
 	printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
 	
-	print_hex_dump_bytes("Hex dump (64 bytes)", DUMP_PREFIX_NONE, data, 64);
+	/*
+	static inline void print_hex_dump(const char *level, const char *prefix_str,
+                                  int prefix_type, int rowsize, int groupsize,
+                                  const void *buf, size_t len, bool ascii)
+	*/
+ 
+	print_hex_dump(KERN_ALERT, "mem: ", DUMP_PREFIX_ADDRESS, 16, 1, data, 256, 1);
+    
+	//print_hex_dump_bytes("Hex dump (64 bytes)", DUMP_PREFIX_NONE, data, 64);
 	/*
 	if(data[1] > 0){
 		//

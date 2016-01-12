@@ -348,7 +348,12 @@ static void	print_respons(const char* buff_256)
                                   const void *buf, size_t len, bool ascii)
 	*/
  
-	print_hex_dump(KERN_ALERT, "mem: ", DUMP_PREFIX_ADDRESS, 16, 1, data, 256, 1);
+    /// offset                     what
+    ///  0                         cmd
+    ///  1                         data-len
+    ///  2                         data
+	print_hex_dump(KERN_ALERT, "head: ", DUMP_PREFIX_ADDRESS, 16, 1, data, 3, 1);
+	print_hex_dump(KERN_ALERT, "data: ", DUMP_PREFIX_ADDRESS, 16, 1, data+3, 253, 1);
     
 	//print_hex_dump_bytes("Hex dump (64 bytes)", DUMP_PREFIX_NONE, data, 64);
 	/*

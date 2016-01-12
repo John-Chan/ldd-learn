@@ -99,6 +99,18 @@ static void    init_driver_contexts(
     }
 }
 
+static void	init_workers(struct driver_context_t* driver_context)
+{
+	int index;  
+
+    for(index=0;index<MAX_CHIP_IN_DEVICE;++index){
+    	driver_context->workers[index].id=index;
+    	driver_context->workers[index].buff_ptr= (s8*)(driver_context->w_buffer.addr + (index* sizeof(struct ssxa_protocol_t)));
+    	driver_context->workers[index].tag_ptr= (u32*)(driver_context->s_buffer.addr + (index* sizeof(u32)));
+    	//FIXME:check size
+    	
+    }
+}
 
 /// return 0 success,others fail
 static int  hold_pci_resources(struct pci_dev *pcidev,struct driver_context_t* driver_context)
@@ -256,6 +268,7 @@ static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protoco
 #define DEVICE_SIG 0x01
 static void	test_io(struct driver_context_t* driver_context)
 {
+    printk(KERN_ALERT DEBUG_TAG "test_io \n");
 	struct  ssxa_protocol_t req;
 	struct  chip_worker_t* worker;
 	u32 tag;
@@ -345,7 +358,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
         dev_err(&(dev->dev), DEBUG_TAG "hold_pci_resources failed \n");
         return -1;
     }
-    
+    init_workers(this_context);
     dev_info(&(dev->dev), "pci probe ==> do handle \n");
     
     dev_info(&(dev->dev), "pci probe ==> do test \n");

@@ -280,6 +280,7 @@ static void	test_io(struct driver_context_t* driver_context)
 	tag=TAG_WRITE;
 	memcpy_toio(worker->buff_ptr,&req,256);
 	iowrite32(tag,worker->tag_ptr); 
+	outb(SIG_INTERRUPT,driver_context->dev_resource.w_port);
  
 /*
   outb(SIG_INTERRUPT,dev->wport);

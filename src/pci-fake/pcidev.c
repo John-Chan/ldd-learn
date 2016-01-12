@@ -267,10 +267,30 @@ static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protoco
 #define SIG_CLEANINTERRUPT 0x70
 #define DEVICE_SIG 0x01
 
+static void	reset_device(struct driver_context_t* driver_context)
+{
+	//
+	printk(KERN_ALERT DEBUG_TAG "reset_device start \n"); 
+	outb(SIG_INTERRUPT,driver_context->dev_resource.r_port);
+	mdelay(800);
+	outb(SIG_CLEANINTERRUPT,driver_context->dev_resource.r_port);
+	mdelay(800);
+	
+	printk(KERN_ALERT DEBUG_TAG "reset_device end \n");  
 
+	/*
+	outb(SIG_INTERRUPT,dev->rport);
+	mdelay(400);
+	outb(SIG_CLEANINTERRUPT,dev->rport);
+	mdelay(400);
+	reset_sscrypt_dev_io(dev);
+	
+	*/
+}
 static void	reset_io(struct driver_context_t* driver_context)
 {
 	
+	printk(KERN_ALERT DEBUG_TAG "reset_io start \n");
 	struct  chip_worker_t* worker;
 	unsigned long index;
 	char data[256];
@@ -280,6 +300,8 @@ static void	reset_io(struct driver_context_t* driver_context)
 		iowrite32_rep(worker->buff_ptr,data,64);
 		iowrite32(TAG_FREE,worker->tag_ptr);    
 	}
+	printk(KERN_ALERT DEBUG_TAG "reset_io end \n");
+
 	/*
 	unsigned long index;
 	char data[256];
@@ -423,10 +445,9 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     }
     init_workers(this_context);
     dev_info(&(dev->dev), "pci probe ==> do handle \n");
-    
-    dev_info(&(dev->dev), "pci probe ==> do reset io \n");
-    reset_io(this_context);
-    dev_info(&(dev->dev), "pci probe ==> do test \n");
+     
+    reset_device(this_context);
+    reset_io(this_context); 
     test_io(this_context);
 	return 0;
 }

@@ -267,6 +267,33 @@ static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protoco
 #define SIG_CLEANINTERRUPT 0x70
 #define DEVICE_SIG 0x01
 
+
+static void	reset_io(struct driver_context_t* driver_context)
+{
+	
+	struct  chip_worker_t* worker;
+	unsigned long index;
+	char data[256];
+	for(index = 0;index < MAX_CHIP_IN_DEVICE;index++)
+	{
+		worker = &driver_context->workers[index];
+		iowrite32_rep(worker->buff_ptr,data,64);
+		iowrite32(TAG_FREE,worker->tag_ptr);    
+	}
+	/*
+	unsigned long index;
+	char data[256];
+	struct crypt_processor_cell_t *cell;
+	memset(data,0,256);
+
+	for(index = 0;index < DEVICE_CELL_COUNT;index++)
+	{
+		cell = &dev->cells[index];
+		iowrite32_rep(cell->buff,data,64);
+		iowrite32(TAG_FREE,cell->tag);    
+	}
+	*/
+}
 /// return bytes readed
 static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
 {
@@ -397,6 +424,8 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     init_workers(this_context);
     dev_info(&(dev->dev), "pci probe ==> do handle \n");
     
+    dev_info(&(dev->dev), "pci probe ==> do reset io \n");
+    reset_io(this_context);
     dev_info(&(dev->dev), "pci probe ==> do test \n");
     test_io(this_context);
 	return 0;

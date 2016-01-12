@@ -243,7 +243,7 @@ static void remove(struct pci_dev *dev)
 	 * like call release_region();
 	 */
 	struct driver_context_t* this_context;
-	this_context= pci_get_drvdata(pcidev);
+	this_context= pci_get_drvdata(dev);
 	
 
 	free_pci_resources(this_context);

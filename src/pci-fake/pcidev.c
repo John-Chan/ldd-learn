@@ -89,7 +89,7 @@ static int __init krn_module_init(void)
         unregister_chrdev_region(devno, MAX_DEVICE);
 
 	}
-	return ret_code
+	return ret_code;
 	//return pci_register_driver(&pci_driver);
 }
 

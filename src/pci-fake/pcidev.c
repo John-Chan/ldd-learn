@@ -47,11 +47,11 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
 	ret_code=pci_enable_device(dev);
 	
     if(ret_code != 0){
-        dev_err(&(pcidev->dev), DEBUG_TAG "pci_enable_device failed \n");
+        dev_err(&(dev->dev), DEBUG_TAG "pci_enable_device failed \n");
         return -1;
     }
 
-    dev_info(&(pcidev->dev), "pci probe ==> do handle \n");
+    dev_info(&(dev->dev), "pci probe ==> do handle \n");
 	return 0;
 }
 
@@ -60,7 +60,7 @@ static void remove(struct pci_dev *dev)
 	/* clean up any allocated resources and stuff here.
 	 * like call release_region();
 	 */
-    dev_info(&(pcidev->dev), DEBUG_TAG "pci remove \n"); 
+    dev_info(&(dev->dev), DEBUG_TAG "pci remove \n"); 
 }
 
 static struct pci_driver pci_driver = {

@@ -110,6 +110,8 @@ static int  hold_pci_resources(struct pci_dev *pcidev,struct driver_context_t* d
     unsigned long base_port;
     unsigned long base_port_size;
  
+ 	return 0;
+ 	
     ret_code=pci_request_regions(pcidev,PCI_DEVICE_NAME);
     if(ret_code != 0){
         dev_err(&(pcidev->dev), DEBUG_TAG "pci_request_regions failed \n");
@@ -201,9 +203,11 @@ fali_clean0:
 
 static int  free_pci_resources(struct driver_context_t* driver_context)
 {
+	return 0;
 	// FIXME: free_irq(driver_context->irq,pci_sscrypt_dev);
 	iounmap(driver_context->base_addr.addr);
 	pci_release_regions(driver_context->pci_dev);
+	return 0;
 }
 // return 0 success,others fialed
 static int	mount_chr_dev(struct driver_context_t* driver_context,int dev_no)
@@ -260,6 +264,7 @@ static int pci_driver_attach(struct pci_dev *pcidev, const struct pci_device_id 
 
     
     int ret_code;
+    struct driver_context_t* this_context;
     
     dev_info(&(pcidev->dev), DEBUG_TAG "dev_attach_counter =%d \n",dev_attach_counter);
     if(dev_attach_counter > MAX_DEVICE ){
@@ -274,7 +279,7 @@ static int pci_driver_attach(struct pci_dev *pcidev, const struct pci_device_id 
         goto fali_clean1;
     }
     
-    struct driver_context_t* this_context= &driver_contexts[dev_attach_counter - 1];
+    this_context= &driver_contexts[dev_attach_counter - 1];
     pci_set_drvdata(pcidev,this_context);
     this_context->pci_dev=pcidev;
     

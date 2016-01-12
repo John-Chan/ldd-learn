@@ -275,6 +275,9 @@ static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
 	data=(char*)buff;
 	
 	tag=ioread32(worker->tag_ptr);
+	
+	printk(KERN_ALERT DEBUG_TAG "ioread32 done ,tag=%08X\n",tag);
+	
 	if(tag==TAG_FREE)
 	{   
 		printk(KERN_ALERT DEBUG_TAG "TAG_FREE device responsed \n");
@@ -338,7 +341,8 @@ static void	test_io(struct driver_context_t* driver_context)
 		//
 		
 	    printk(KERN_ALERT DEBUG_TAG "start delay before read \n");
-		msleep(1000);
+		//msleep(1000);
+		mdelay(1000);
 	    printk(KERN_ALERT DEBUG_TAG "delay end \n");
 		has_read=read(worker,data,256);
 	    printk(KERN_ALERT DEBUG_TAG "bytes read=%d \n",has_read);

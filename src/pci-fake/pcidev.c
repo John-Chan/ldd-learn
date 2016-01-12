@@ -23,7 +23,7 @@
 #define SSX10A_VENDER_ID    0x0922
 #define SSX10A_DEVICE_ID    0x0100
 
-s
+
 
 MODULE_DESCRIPTION("FAKE PCI  driver");
 MODULE_AUTHOR("john (cpp.cheen@gmail.com)");

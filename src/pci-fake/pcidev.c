@@ -224,7 +224,7 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     }
 
     this_context= &driver_contexts[0];
-    pci_set_drvdata(pcidev,this_context);
+    pci_set_drvdata(dev,this_context);
     this_context->pci_dev=dev;
     
     ret_code = hold_pci_resources(dev,this_context);

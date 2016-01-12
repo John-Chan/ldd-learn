@@ -10,13 +10,15 @@
 #include <asm/uaccess.h>    /* for put_user */
 #include <asm/byteorder.h>
 #include <asm-generic/bug.h>
-
+#include <linux/delay.h>
 
 
 
 #define     MAX_DEVICE      4
 #define     MAX_CHIP_IN_DEVICE  16
 #define     CHIP_BUFF_SIZE      256
+#define 	SSX10A_PROTO_DATA_LEN   250 
+
 #define     PCI_DEVICE_NAME     "fake-pci"      /* will show in '/proc/devices' */
 #define		DEBUG_TAG          " LDD-DEBUG "
 
@@ -26,6 +28,23 @@
 #define SSX10A_DEVICE_ID    0x0100
 
 
+
+ 
+#pragma pack(1)
+struct ssxa_protocol_t{
+  u32 processor_id;
+  u8  cmd;
+  u8  datalen;
+  u8  data[SSX10A_PROTO_DATA_LEN];
+};
+
+struct  ssxa_proto_buff_t{
+    union{
+        struct ssxa_protocol_t  msg;
+        u8  raw_data[sizeof(struct ssxa_protocol_t)];
+    }data;
+};
+#pragma pack()
 struct driver_buffer_t{
 	char* addr;
 	unsigned long size;
@@ -190,6 +209,100 @@ static int  free_pci_resources(struct driver_context_t* driver_context)
 	pci_release_regions(driver_context->pci_dev);
 	return 0;
 }
+
+static unsigned short ssxa_checksum(const void *ptr,size_t len)
+{
+    const unsigned char *data ;
+    unsigned short	Q[2]={0,0};
+	unsigned short	S[2]={0,0};
+	size_t	i=0;
+
+	data=(const unsigned char*)ptr;
+	for (i=1;i<=len;++i){
+		Q[1]=Q[0]+  data[i-1];
+		S[1]=S[0]+  Q[1];
+		Q[0]=Q[1];
+		S[0]=S[1];
+	}
+	return S[1];
+}
+
+
+static  struct ssxa_protocol_t* put_crc(struct ssxa_protocol_t* msg)
+{
+    unsigned short* crc;
+    BUG_ON( msg->datalen > SSX10A_PROTO_DATA_LEN - 2 );
+    crc=(unsigned short*)(&msg->data[msg->datalen]);
+    *crc=ssxa_checksum(msg,6+msg->datalen);
+    *crc=cpu_to_le16(*crc);
+    return msg;
+}
+static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protocol_t* msg)
+{
+    memset(msg,0,sizeof(struct ssxa_protocol_t));
+    //msg->processor_id=chip_index;
+    msg->processor_id=cpu_to_le32(chip_index);
+    msg->cmd=(u8)('A');
+    msg->datalen=0;
+    put_crc(msg);
+    return msg;
+}
+
+#define TAG_WRITE 0xAAAAAAAA
+#define TAG_FREE  0x00000000
+#define TAG_RETURNED 0x3C3C3C3C
+#define SIG_INTERRUPT 0x80
+#define SIG_CLEANINTERRUPT 0x70
+#define DEVICE_SIG 0x01
+static void	test_io(struct driver_context_t* driver_context)
+{
+	ssxa_protocol_t req;
+	struct  chip_worker_t* worker;
+	u32 tag;
+	char data[256];
+
+	worker=&driver_context->workers[0];
+	make_rest_msg(0,&req);
+	
+	tag=TAG_WRITE;
+	memcpy_toio(worker->buff_ptr,&req,256);
+	iowrite32(tag,worker->tag_ptr); 
+ 
+/*
+  outb(SIG_INTERRUPT,dev->wport);
+  retval = wait_event_interruptible_timeout(cell->waitqueue,
+                                   cell->waitcond,
+                                   cell->timeout);
+  
+  if(retval==0){
+#ifdef PCI_SSCRYPT_DEBUG
+      printk(KERN_ALERT"call wait_event failed\n");
+#endif
+      level_cell(cell);
+	return -ERESTARTSYS;
+  }
+*/
+   
+    printk(KERN_ALERT DEBUG_TAG "start delay before read \n");
+	msleep(2000);
+    printk(KERN_ALERT DEBUG_TAG "delay end \n");
+ //down(&cell->sem);
+ if(ioread32(tag,worker->tag_ptr)==TAG_FREE)
+ {   
+    printk(KERN_ALERT DEBUG_TAG "device responsed \n");
+	memcpy_fromio(data,worker->buff_ptr,256);   
+    printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		/*
+   retval=copy_to_user((char *)buff,(const char *)data,256);
+
+    if(retval)
+       result = 0;
+   result = 256;  
+   */  
+ }else{ 
+    printk(KERN_ALERT DEBUG_TAG "device not response \n");
+ } 
+}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MODULE_DESCRIPTION("FAKE PCI  driver");
 MODULE_AUTHOR("john (cpp.cheen@gmail.com)");
@@ -234,6 +347,9 @@ static int probe(struct pci_dev *dev, const struct pci_device_id *id)
     }
     
     dev_info(&(dev->dev), "pci probe ==> do handle \n");
+    
+    dev_info(&(dev->dev), "pci probe ==> do test \n");
+    test_io(this_context);
 	return 0;
 }
 

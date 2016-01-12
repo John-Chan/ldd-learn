@@ -355,7 +355,7 @@ static struct pci_driver pci_driver = {
 	.name 		= "pci",
 	.id_table 	= pci_ids,
 	.probe 		= pci_driver_attach,
-	.remove 	= pci_driver_detach,
+	.remove 	= pci_driver_detach
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////

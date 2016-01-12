@@ -249,6 +249,22 @@ static  struct ssxa_protocol_t* put_crc(struct ssxa_protocol_t* msg)
     *crc=cpu_to_le16(*crc);
     return msg;
 }
+static  struct ssxa_protocol_t* make_encrykey_msg(u32 chip_index,struct ssxa_protocol_t* msg)
+{
+	int i;
+    memset(msg,0,sizeof(struct ssxa_protocol_t));
+    //msg->processor_id=chip_index;
+    msg->processor_id=cpu_to_le32(chip_index);
+    msg->cmd=(u8)('F');
+    msg->datalen=16;
+    
+    for(i=0;i<16;++i){
+    	msg->data[i]=0x31;
+    }
+    put_crc(msg);
+    return msg;
+}
+
 static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protocol_t* msg)
 {
     memset(msg,0,sizeof(struct ssxa_protocol_t));
@@ -316,6 +332,20 @@ static void	reset_io(struct driver_context_t* driver_context)
 	}
 	*/
 }
+
+static void	print_respons(const char* buff_256)
+{
+	int data_len;
+	printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+	if(data[1] > 0){
+		//
+		for(data_len = 0;data_len < 32 ;++data_len ){
+			//
+			printk(KERN_ALERT  "%02X ",(int)data[data_len] );
+		}
+		printk(KERN_ALERT DEBUG_TAG "\n");
+	}
+}
 /// return bytes readed
 static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
 {
@@ -331,7 +361,8 @@ static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
 	{   
 		printk(KERN_ALERT DEBUG_TAG "TAG_FREE device responsed \n");
 		memcpy_fromio(data,worker->buff_ptr,bytes);   
-		printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		//printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		print_respons(data);
 		/*
 		retval=copy_to_user((char *)buff,(const char *)data,256);
 
@@ -343,7 +374,8 @@ static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
 	}else if(tag==TAG_RETURNED){ 
 		printk(KERN_ALERT DEBUG_TAG "TAG_RETURNED device responsed \n");
 		memcpy_fromio(data,worker->buff_ptr,bytes);   
-		printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		//printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		print_respons(data);
 		
 		return 256;
 	} else  { 
@@ -364,7 +396,7 @@ static void	test_io(struct driver_context_t* driver_context)
 	char data[256];
 
 	worker=&driver_context->workers[0];
-	make_rest_msg(0,&req);
+	make_encrykey_msg(0,&req);
 	
 	tag=TAG_WRITE;
 	memcpy_toio(worker->buff_ptr,&req,256);

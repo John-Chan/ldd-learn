@@ -392,14 +392,14 @@ static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
 		   result = 0;
 		result = 256;  
 		*/  
-		return 256;
+		return bytes;
 	}else if(tag==TAG_RETURNED){ 
 		printk(KERN_ALERT DEBUG_TAG "TAG_RETURNED device responsed \n");
 		memcpy_fromio(data,worker->buff_ptr,bytes);   
 		//printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
 		print_respons(data);
 		
-		return 256;
+		return bytes;
 	} else  { 
 		printk(KERN_ALERT DEBUG_TAG "device not response \n");
 		return 0;
@@ -416,6 +416,7 @@ static void	test_io(struct driver_context_t* driver_context)
 	int has_read;
 	int retry;
 	char data[256];
+	memset(data,0x0,256);
 
 	worker=&driver_context->workers[0];
 	make_encrykey_msg(0,&req);

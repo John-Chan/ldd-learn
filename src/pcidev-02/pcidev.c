@@ -299,11 +299,15 @@ static int pci_driver_attach(struct pci_dev *pcidev, const struct pci_device_id 
     return 1;
     
 fali_clean4:
+
+	printk(KERN_ERR DEBUG_TAG "undo:unmount_chr_dev\n");
 	unmount_chr_dev(this_context);
 fali_clean3:
+	printk(KERN_ERR DEBUG_TAG "undo:free_pci_resources\n");
 	free_pci_resources(this_context);
 fali_clean2:
-    pci_disable_device(pcidev);
+	printk(KERN_ERR DEBUG_TAG "undo:pci_disable_device\n");
+    //pci_disable_device(pcidev);
 fali_clean1:
     dev_attach_counter--;
 fali_clean0:
@@ -324,7 +328,7 @@ static void pci_driver_detach(struct pci_dev *pcidev)
 
 	free_pci_resources(this_context);
 
-    pci_disable_device(pcidev);
+    //pci_disable_device(pcidev);
 
     dev_attach_counter--;
 

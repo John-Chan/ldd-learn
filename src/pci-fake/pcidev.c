@@ -336,11 +336,14 @@ static void	reset_io(struct driver_context_t* driver_context)
 static void	print_respons(const char* buff_256)
 {
 	char* data;
-	int data_len;
+	//int data_len;
 	
 	data=(char*)buff_256;
 	
 	printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+	
+	print_hex_dump_bytes("Hex dump (64 bytes)", DUMP_PREFIX_NONE, data, 64);
+	/*
 	if(data[1] > 0){
 		//
 		for(data_len = 0;data_len < 32 ;++data_len ){
@@ -349,6 +352,7 @@ static void	print_respons(const char* buff_256)
 		}
 		printk(KERN_ALERT DEBUG_TAG "\n");
 	}
+	*/
 }
 /// return bytes readed
 static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)

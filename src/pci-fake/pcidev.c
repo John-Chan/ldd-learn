@@ -266,12 +266,49 @@ static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protoco
 #define SIG_INTERRUPT 0x80
 #define SIG_CLEANINTERRUPT 0x70
 #define DEVICE_SIG 0x01
+
+/// return bytes readed
+static int	read(struct  chip_worker_t* worker,void* buff,unsigned int bytes)
+{
+	u32 tag;
+	char* data;
+	data=(char*)buff;
+	
+	tag=ioread32(worker->tag_ptr);
+	if(tag==TAG_FREE)
+	{   
+		printk(KERN_ALERT DEBUG_TAG "TAG_FREE device responsed \n");
+		memcpy_fromio(data,worker->buff_ptr,bytes);   
+		printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		/*
+		retval=copy_to_user((char *)buff,(const char *)data,256);
+
+		if(retval)
+		   result = 0;
+		result = 256;  
+		*/  
+		return 256;
+	}else if(tag==TAG_RETURNED){ 
+		printk(KERN_ALERT DEBUG_TAG "TAG_RETURNED device responsed \n");
+		memcpy_fromio(data,worker->buff_ptr,bytes);   
+		printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
+		
+		return 256;
+	} else  { 
+		printk(KERN_ALERT DEBUG_TAG "device not response \n");
+		return 0;
+	} 
+	
+	
+}
 static void	test_io(struct driver_context_t* driver_context)
 {
     printk(KERN_ALERT DEBUG_TAG "test_io \n");
 	struct  ssxa_protocol_t req;
 	struct  chip_worker_t* worker;
 	u32 tag;
+	int has_read;
+	int retry;
 	char data[256];
 
 	worker=&driver_context->workers[0];
@@ -296,26 +333,20 @@ static void	test_io(struct driver_context_t* driver_context)
 	return -ERESTARTSYS;
   }
 */
-   
-    printk(KERN_ALERT DEBUG_TAG "start delay before read \n");
-	msleep(2000);
-    printk(KERN_ALERT DEBUG_TAG "delay end \n");
- //down(&cell->sem);
- if(ioread32(worker->tag_ptr)==TAG_FREE)
- {   
-    printk(KERN_ALERT DEBUG_TAG "device responsed \n");
-	memcpy_fromio(data,worker->buff_ptr,256);   
-    printk(KERN_ALERT DEBUG_TAG "cmd=%c,data len=%d,status code=%d \n",data[0],(int)data[1],(int)data[2]);
-		/*
-   retval=copy_to_user((char *)buff,(const char *)data,256);
 
-    if(retval)
-       result = 0;
-   result = 256;  
-   */  
- }else{ 
-    printk(KERN_ALERT DEBUG_TAG "device not response \n");
- } 
+	for(retry =0;retry<5;++retry){
+		//
+		
+	    printk(KERN_ALERT DEBUG_TAG "start delay before read \n");
+		msleep(1000);
+	    printk(KERN_ALERT DEBUG_TAG "delay end \n");
+		has_read=read(worker,data,256);
+	    printk(KERN_ALERT DEBUG_TAG "bytes read=%d \n",has_read);
+	    if(has_read == 256){
+	    	break;
+	    }
+	}
+	 
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 MODULE_DESCRIPTION("FAKE PCI  driver");

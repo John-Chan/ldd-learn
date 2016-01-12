@@ -256,7 +256,7 @@ static  struct ssxa_protocol_t* make_rest_msg(u32 chip_index,struct ssxa_protoco
 #define DEVICE_SIG 0x01
 static void	test_io(struct driver_context_t* driver_context)
 {
-	ssxa_protocol_t req;
+	struct  ssxa_protocol_t req;
 	struct  chip_worker_t* worker;
 	u32 tag;
 	char data[256];
@@ -287,7 +287,7 @@ static void	test_io(struct driver_context_t* driver_context)
 	msleep(2000);
     printk(KERN_ALERT DEBUG_TAG "delay end \n");
  //down(&cell->sem);
- if(ioread32(tag,worker->tag_ptr)==TAG_FREE)
+ if(ioread32(worker->tag_ptr)==TAG_FREE)
  {   
     printk(KERN_ALERT DEBUG_TAG "device responsed \n");
 	memcpy_fromio(data,worker->buff_ptr,256);   
